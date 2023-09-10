@@ -1,0 +1,5 @@
+C:/Users/egoru/Desktop/JPG2ASCII/build/CMakeFiles/INSTALL.dir
+C:/Users/egoru/Desktop/JPG2ASCII/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/egoru/Desktop/JPG2ASCII/build/CMakeFiles/ZERO_CHECK.dir
+C:/Users/egoru/Desktop/JPG2ASCII/build/src/CMakeFiles/INSTALL.dir
+C:/Users/egoru/Desktop/JPG2ASCII/build/src/CMakeFiles/JPG-to-ASCII.dir
