@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['filename_0',['filename',['../classmainwindow.html#a58809bd93f582861690f29a0185af4d2',1,'mainwindow']]]
+  ['getcorrespondence_0',['getCorrespondence',['../classmainwindow.html#a7bbb9b342ee5f5330182f81b38ca175d',1,'mainwindow']]]
 ];

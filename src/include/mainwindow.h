@@ -1,8 +1,9 @@
-#pragma once
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
 
 #include <QtWidgets/QMainWindow>
-#include "ui_mainwindow.h"
 #include <string>
+#include <ui_mainwindow.h>
 
 using namespace std;
 
@@ -153,3 +154,4 @@ private:
     QString filename; //!<  Наименование изображения в формате "xxx.jpg"
     Ui::mainwindow ui;
 };
+#endif // MAINWINDOW_H

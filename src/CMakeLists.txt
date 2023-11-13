@@ -1,3 +1,12 @@
+#======================= Documentation =======================#
+include(FindDoxygen)
+message("Doxygen build started")
+set(DOXYGEN_GENERATE_HTML YES)
+set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/doc)
+set(DOXYGEN_OUTPUT_LANGUAGE "Russian")
+set(DOXYGEN_INPUT_ENCODING "CP1251")
+set(DOCUMENTABLE_SOURCES ${CMAKE_SOURCE_DIR}/src)
+doxygen_add_docs(doxygen ${DOCUMENTABLE_SOURCES})
 #======================= INCLUSION OF Qt =======================#
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
@@ -41,6 +50,8 @@ target_include_directories(JPG-to-ASCII PRIVATE ${SOURCE_DIR})
 
 #===================== LINKING LIBRARIES =======================#
 target_link_libraries(JPG-to-ASCII PRIVATE Qt6::Widgets)
+target_link_libraries(JPG-to-ASCII PRIVATE Qt6::Core)
+target_link_libraries(JPG-to-ASCII PRIVATE Qt6::Gui)
 
 #===================== INSTALL SECTION =======================#
 install(TARGETS JPG-to-ASCII DESTINATION ${CMAKE_SOURCE_DIR}/bin)
