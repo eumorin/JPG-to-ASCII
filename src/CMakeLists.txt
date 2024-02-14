@@ -12,8 +12,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_PREFIX_PATH $ENV{QTDIR})
-find_package(Qt6Core REQUIRED)
-find_package(Qt6Widgets REQUIRED)
+find_package(Qt6 COMPONENTS Widgets Core Gui REQUIRED)
 
 #=================== INCLUSION OF Project Files ====================#
 set(FORMS_DIR "${CMAKE_SOURCE_DIR}/src/forms")
@@ -55,3 +54,14 @@ target_link_libraries(JPG-to-ASCII PRIVATE Qt6::Gui)
 
 #===================== INSTALL SECTION =======================#
 install(TARGETS JPG-to-ASCII DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
+install(FILES $<TARGET_FILE:Qt6::Core>
+	DESTINATION bin)
+install(FILES $<TARGET_FILE:Qt6::Gui> 
+	DESTINATION bin)
+install(FILES $<TARGET_FILE:Qt6::Widgets> 
+	DESTINATION bin)
+
+install(DIRECTORY "${CMAKE_PREFIX_PATH}/plugins/platforms"
+	DESTINATION bin)
+
