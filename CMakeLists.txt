@@ -10,4 +10,4 @@ include_directories(src)
 
 add_subdirectory(src)
 
-set(CMAKE_CONFIGURATION_TYPES "Release" CACHE STRING "" FORCE)
+set(CMAKE_CONFIGURATION_TYPES "Release;Debug" CACHE STRING "" FORCE)

@@ -1,8 +1,6 @@
 ﻿#include <mainwindow.h>
 #include <QFileDialog>
 #include <QString>
-#include <QLineEdit>
-#include <QRegularExpression>
 #include <QFile>
 #include <QValidator>
 #include <QImage>
@@ -13,20 +11,68 @@
 
 using namespace std;
 
-mainwindow::mainwindow(QWidget *parent)
-    : QMainWindow(parent)
-{
-	ui.setupUi(this);
-	QRegularExpression exp("[1-9]{1}[0-9]{1}");
-	ui.lineEdit->setValidator(new QRegularExpressionValidator(exp, this));
+void mainwindow::updateConvertButtonState() {
+	ui.Convert->setEnabled(!ui.combo_gradient->currentText().isEmpty() && !path.isEmpty());
 }
 
+
+mainwindow::mainwindow(QWidget* parent)
+	: QMainWindow(parent)
+{
+	ui.setupUi(this);
+	ui.combo_gradient->addItem("@$8W9H4Z1l(r/!:. ");
+	ui.combo_gradient->addItem("&$Xx=+;:. ");
+	ui.combo_gradient->setEditable(true);
+
+	connect(ui.combo_gradient, SIGNAL(editTextChanged(const QString&)), this, SLOT(updateConvertButtonState()));
+	ui.Convert->setEnabled(false);
+}
+
+
 void mainwindow::on_Choose_clicked(){
-	path = QFileDialog::getOpenFileName();
+	path = QFileDialog::getOpenFileName(this, "Выберите изображение", QString(), "Images (*.png *.jpg *.jpeg *.bmp)");
+	if (path.isEmpty()) {
+		ui.statusBar->showMessage("Загрузка изображения отменена.");
+		return;
+	}
+
+	QImage image;
+	if (!image.load(path)) {
+		ui.statusBar->showMessage("Не удалось загрузить изображение.");
+		return;
+	}
+
+	QPixmap pixmap(path);
+	QPixmap scaledPixmap = pixmap.scaled(256, 144, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+	ui.label_image->setPixmap(scaledPixmap);
+	ui.label_image->setFixedSize(256, 144);
+
 	ui.statusBar->showMessage("Изображение выбрано!");
+
+	int minWidth = 551;
+	int minHeight = 350;
+
+	this->setMinimumSize(minWidth, minHeight);
+
 	std::filesystem::path file = path.toStdString();
 	std::string stdfilename = file.stem().string();
 	filename = QString::fromStdString(stdfilename);
+
+	int imgWidth = image.width();
+	int imgHeight = image.height();
+	ui.xresSpinBox->setMaximum(imgHeight);
+	ui.xresSpinBox->setMinimum(1);
+	ui.yresSpinBox->setMaximum(imgWidth);
+	ui.yresSpinBox->setMinimum(1);
+
+	ui.xresSpinBox->setEnabled(true);
+	ui.yresSpinBox->setEnabled(true);
+	ui.Convert->setEnabled(!ui.combo_gradient->currentText().isEmpty() && !path.isEmpty());
+	ui.combo_gradient->setEnabled(true);
+
+	ui.label_width->setText(QString("Выберите ширину ASCII-art в столбцах (1-%1)").arg(imgWidth));
+	ui.label_height->setText(QString("Выберите высоту ASCII-art в строках (1-%1)").arg(imgHeight));
 }
 
 char mainwindow::getCorrespondence(int brightness, string gradient){
@@ -43,61 +89,116 @@ void mainwindow::toGray(QImage &bwimage) noexcept {
 }
 
 void mainwindow::Compression(QImage& bwimage, QImage& bwimageCompressed, const int Xres, const int Yres) noexcept {
-	int gray = 0;
-	for (int i = 0; i < bwimage.size().width() - Xres; i += Xres) {
-		for (int j = 0; j < bwimage.size().height() - Yres; j += Yres) {
-			for (int x = 0; x < Xres; x++) {
-				for (int y = 0; y < Yres; y++) {
-					gray += bwimage.pixelColor(i + x, j + y).red();
+	int widthStep = bwimage.width() / Xres;
+	int heightStep = bwimage.height() / Yres;
+
+	QImage newImage(Xres, Yres, QImage::Format_RGB32);
+
+	for (int i = 0; i < Xres; ++i) {
+		for (int j = 0; j < Yres; ++j) {
+			int gray = 0;
+			for (int x = 0; x < widthStep; ++x) {
+				for (int y = 0; y < heightStep; ++y) {
+					gray += bwimage.pixelColor(i * widthStep + x, j * heightStep + y).red();
 				}
 			}
-			gray /= Xres * Yres + 1;
-			for (int x = 0; x < Xres; x++) {
-				for (int y = 0; y < Yres; y++) {
-					bwimageCompressed.setPixelColor(i + x, j + y, QColor(gray, gray, gray));
-				}
-			}
+			gray /= widthStep * heightStep;
+			newImage.setPixelColor(i, j, QColor(gray, gray, gray));
 		}
 	}
+
+	bwimageCompressed = newImage;
 }
 
 string mainwindow::Conversion(QImage &bwimageCompressed, const string& gradient, const int Xres, const int Yres) noexcept {
 	string asciiArt;
-	for (int j = 0; j < bwimageCompressed.size().height(); j += Yres) {
-		for (int i = 0; i < bwimageCompressed.size().width(); i += Xres) {
-			asciiArt += getCorrespondence(bwimageCompressed.pixelColor(i, j).red(), gradient);
+	int width = bwimageCompressed.size().width();
+	int height = bwimageCompressed.size().height();
+
+	int widthStep = width / Xres;
+	int heightStep = height / Yres;
+
+	for (int y = 0; y < height; y += heightStep) {
+		for (int x = 0; x < width; x += widthStep) {
+			int grayValue = 0;
+			for (int i = 0; i < heightStep; ++i) {
+				for (int j = 0; j < widthStep; ++j) {
+					if ((x + j < width) && (y + i < height)) {
+						grayValue += bwimageCompressed.pixelColor(x + j, y + i).red();
+					}
+				}
+			}
+			grayValue /= widthStep * heightStep;
+			asciiArt += getCorrespondence(grayValue, gradient);
 		}
-		asciiArt += "\n";
+		asciiArt += "\n"; 
 	}
 	return asciiArt;
 }
 
 void mainwindow::on_Convert_clicked() {
-	QString Qs = ui.lineEdit->text();
-	int Xres = 30;
-	if (Qs.toInt() < 30) Xres = Qs.toInt();
-	int Yres = 2 * Xres;
+	int Xres = ui.xresSpinBox->value(); 
+	int Yres = ui.yresSpinBox->value();
+
 	string outputPath;
-	string gradient = "@$8W9H4Z1l(r/!:. ";
+	QString Qs = ui.combo_gradient->currentText();
+	if ((Qs.startsWith('"') && Qs.endsWith('"')) || (Qs.startsWith('\'') && Qs.endsWith('\''))) {
+		Qs = Qs.mid(1, Qs.length() - 2);
+	}
+	string gradient = Qs.toStdString();
 
 	QImage image;
 	image.load(path);
-	
+
 	QImage bwimage(image);
-	toGray(bwimage);
+	toGray(bwimage); 
 
 	QImage bwimageCompressed(image);
-	Compression(bwimage, bwimageCompressed, Xres, Yres);
+	Compression(bwimage, bwimageCompressed, Yres, Xres);
 
-	string asciiArt = Conversion(bwimageCompressed, gradient, Xres, Yres);
-	int a = Qs.toInt();
-	if (Qs.toInt() > 30) ui.statusBar->showMessage("Конвертация завершена! Было выставлено макс. допустимое значение (30)");
-	else ui.statusBar->showMessage("Конвертация завершена!");
+	string asciiArt = Conversion(bwimageCompressed, gradient, Yres, Xres);
+
+	ui.statusBar->showMessage("Конвертация завершена!");
+
 	QFileDialog q;
 	QString qpath;
 	qpath = q.getExistingDirectory();
 	outputPath = qpath.toStdString();
-	outputPath = outputPath + "/" + filename.toStdString() + ".txt";
+	outputPath += "/" + filename.toStdString() + ".txt";
+
 	ofstream output(outputPath);
-	if (output) output << asciiArt;
+	if (output) {
+		output << asciiArt;
+		output.close();
+		ui.statusBar->showMessage("Файл сохранен в: " + QString::fromStdString(outputPath));
+	}
+	else {
+		ui.statusBar->showMessage("Ошибка при сохранении файла!");
+	}
+}
+
+void mainwindow::processCommandLineArguments(const QString& inputFilePath, int width, int height, const string& gradient, const QString& outputPath) noexcept {
+	QImage image;
+	if (!image.load(inputFilePath)) {
+		qDebug() << "Failed to load the image: " << inputFilePath;
+		return;
+	}
+
+	QImage bwimage(image);
+	toGray(bwimage); 
+
+	QImage bwimageCompressed(image);
+	Compression(bwimage, bwimageCompressed, width, height);
+
+	string asciiArt = Conversion(bwimageCompressed, gradient, width, height);
+
+	ofstream output(outputPath.toStdString());
+	if (output) {
+		output << asciiArt;
+		output.close();
+		qDebug() << "File saved to: " << outputPath;
+	}
+	else {
+		qDebug() << "Error while attempting to save file to: " << outputPath;
+	}
 }

@@ -36,10 +36,12 @@ file(GLOB_RECURSE SOURCES
 set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_AUTOUIC_SEARCH_PATHS} ${FORMS_DIR})
 
 # Add the executable
-if (WIN32) 
-    add_executable(JPG-to-ASCII WIN32 ${SOURCES})
-elseif(UNIX)
+option(BUILD_AS_CONSOLE "Build the application as a console application" ON)
+
+if(WIN32 AND BUILD_AS_CONSOLE)
     add_executable(JPG-to-ASCII ${SOURCES})
+else()
+    add_executable(JPG-to-ASCII WIN32 ${SOURCES})
 endif()
 
 # Add the target includes for JPG-to-ASCII
@@ -63,5 +65,8 @@ install(FILES $<TARGET_FILE:Qt6::Widgets>
 	DESTINATION bin)
 
 install(DIRECTORY "${CMAKE_PREFIX_PATH}/plugins/platforms"
+	DESTINATION bin)
+
+install(DIRECTORY "${CMAKE_PREFIX_PATH}/plugins/imageformats"
 	DESTINATION bin)
 
